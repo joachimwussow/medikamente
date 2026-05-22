@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Medikamente">
+<title>Medikamente</title>
+<style>
+:root {
+  --blue:#1a73e8; --blue-light:#e8f0fe; --green:#1e8c45; --green-light:#e6f4ea;
+  --amber:#b45309; --amber-light:#fef3c7; --red:#c0392b; --red-light:#fdecea;
+  --gray-50:#f8f9fa; --gray-100:#f1f3f4; --gray-200:#e8eaed; --gray-400:#bdc1c6;
+  --gray-600:#80868b; --gray-800:#3c4043; --gray-900:#202124; --white:#ffffff;
+  --radius:14px; --radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.15);
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; font-family:-apple-system,'Helvetica Neue',Arial,sans-serif; background:var(--gray-100); color:var(--gray-900); }
+#app { display:flex; height:100vh; height:100dvh; overflow:hidden; }
+#sidebar { width:270px; min-width:270px; background:var(--white); border-right:1px solid var(--gray-200); display:flex; flex-direction:column; }
+#main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.sidebar-header { padding:20px 20px 14px; border-bottom:1px solid var(--gray-200); }
+.app-title { font-size:21px; font-weight:700; color:var(--blue); }
+.app-subtitle { font-size:12px; color:var(--gray-600); margin-top:3px; }
+.nav-list { flex:1; overflow-y:auto; padding:8px 10px; }
+.nav-item { display:flex; align-items:center; gap:11px; padding:12px 13px; border-radius:var(--radius-sm); cursor:pointer; font-size:14px; font-weight:500; color:var(--gray-800); margin-bottom:2px; transition:background 0.15s; user-select:none; }
+.nav-item:hover { background:var(--gray-100); }
+.nav-item.active { background:var(--blue-light); color:var(--blue); }
+.nav-item svg { width:19px; height:19px; flex-shrink:0; }
+.nav-badge { margin-left:auto; background:var(--blue); color:#fff; font-size:11px; font-weight:600; border-radius:10px; padding:2px 7px; }
+.sidebar-footer { padding:12px 14px; border-top:1px solid var(--gray-200); }
+.export-btn { width:100%; padding:10px; background:var(--gray-100); border:1px solid var(--gray-200); border-radius:var(--radius-sm); font-size:13px; font-weight:500; color:var(--gray-800); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+.export-btn:hover { background:var(--gray-200); }
+#topbar { background:var(--white); border-bottom:1px solid var(--gray-200); padding:14px 22px; display:flex; align-items:center; justify-content:space-between; min-height:62px; flex-shrink:0; }
+.topbar-title { font-size:19px; font-weight:600; }
+.btn { display:inline-flex; align-items:center; gap:7px; padding:9px 17px; border-radius:var(--radius-sm); font-size:14px; font-weight:500; cursor:pointer; border:none; transition:all 0.15s; white-space:nowrap; font-family:inherit; }
+.btn-primary { background:var(--blue); color:#fff; }
+.btn-primary:hover { background:#1557b0; }
+.btn-primary:disabled { background:var(--gray-400); cursor:not-allowed; }
+.btn-secondary { background:var(--gray-100); color:var(--gray-800); border:1px solid var(--gray-200); }
+.btn-secondary:hover { background:var(--gray-200); }
+#content { flex:1; overflow-y:auto; padding:22px; }
+.card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:16px; overflow:hidden; }
+.card-header { padding:16px 20px 13px; border-bottom:1px solid var(--gray-200); }
+.card-title { font-size:16px; font-weight:600; }
+.card-body { padding:18px 20px; }
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px; }
+.stat-card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 18px; }
+.stat-label { font-size:11px; font-weight:600; color:var(--gray-600); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:5px; }
+.stat-value { font-size:26px; font-weight:700; color:var(--gray-900); }
+.stat-sub { font-size:11px; color:var(--gray-600); margin-top:2px; }
+.med-item { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:11px; overflow:hidden; }
+.med-item-header { padding:15px 18px; display:flex; align-items:flex-start; justify-content:space-between; cursor:pointer; }
+.med-name { font-size:16px; font-weight:600; margin-bottom:5px; }
+.med-meta { display:flex; flex-wrap:wrap; gap:6px; }
+.meta-pill { display:inline-flex; align-items:center; gap:3px; background:var(--gray-100); border-radius:20px; padding:3px 10px; font-size:12px; color:var(--gray-800); }
+.meta-pill.timing { background:var(--blue-light); color:var(--blue); }
+.purpose-badge { display:inline-block; background:var(--green-light); color:var(--green); border-radius:20px; padding:3px 10px; font-size:12px; }
+.med-actions { display:flex; gap:7px; margin-left:14px; flex-shrink:0; }
+.icon-btn { width:32px; height:32px; border:none; background:var(--gray-100); border-radius:7px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background 0.15s; flex-shrink:0; }
+.icon-btn:hover { background:var(--gray-200); }
+.icon-btn.danger:hover { background:var(--red-light); }
+.icon-btn svg { width:15px; height:15px; color:var(--gray-600); }
+.icon-btn.danger:hover svg { color:var(--red); }
+.med-body { padding:0 18px 15px; border-top:1px solid var(--gray-100); display:none; }
+.med-body.open { display:block; }
+.ing-section { margin-top:13px; }
+.ing-label { font-size:11px; font-weight:600; color:var(--gray-600); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:7px; }
+.ing-tags { display:flex; flex-wrap:wrap; gap:6px; }
+.ing-tag { display:inline-flex; align-items:center; gap:4px; background:var(--blue-light); color:var(--blue); border-radius:20px; padding:4px 12px; font-size:13px; cursor:pointer; border:none; font-family:inherit; transition:background 0.15s; }
+.ing-tag:hover { background:#d2e3fc; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px; }
+.form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:15px; margin-bottom:15px; }
+.field { display:flex; flex-direction:column; gap:5px; }
+label { font-size:12px; font-weight:500; color:var(--gray-600); }
+input,select,textarea { font-size:15px; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:var(--radius-sm); background:var(--white); color:var(--gray-900); font-family:inherit; transition:border-color 0.15s; outline:none; width:100%; }
+input:focus,select:focus,textarea:focus { border-color:var(--blue); }
+textarea { resize:vertical; min-height:75px; line-height:1.5; }
+.scan-zone { border:2px dashed var(--gray-400); border-radius:var(--radius); min-height:130px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; cursor:pointer; position:relative; background:var(--gray-50); transition:all 0.2s; text-align:center; padding:16px; }
+.scan-zone:hover { border-color:var(--blue); background:var(--blue-light); }
+.scan-zone.has-photo { border-style:solid; border-color:var(--blue); padding:0; overflow:hidden; }
+.scan-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.scan-zone img { width:100%; height:130px; object-fit:cover; display:block; }
+.scan-zone-icon { font-size:32px; }
+.scan-zone-text { font-size:14px; font-weight:500; color:var(--gray-800); }
+.scan-zone-sub { font-size:12px; color:var(--gray-600); }
+.photo-ok { position:absolute; bottom:0; left:0; right:0; background:var(--blue); color:#fff; font-size:12px; padding:4px; text-align:center; }
+.interaction-card { border-radius:var(--radius); padding:15px 18px; margin-bottom:12px; border:1px solid; }
+.interaction-card.safe { background:var(--green-light); border-color:#a8d5b5; }
+.interaction-card.warning { background:var(--amber-light); border-color:#fbbf24; }
+.interaction-card.danger { background:var(--red-light); border-color:#f5c6c2; }
+.int-title { font-size:15px; font-weight:600; display:flex; align-items:center; gap:7px; margin-bottom:8px; }
+.int-title.safe { color:var(--green); }
+.int-title.warning { color:var(--amber); }
+.int-title.danger { color:var(--red); }
+.int-item { font-size:13px; color:var(--gray-900); padding:6px 0; border-top:1px solid rgba(0,0,0,0.07); line-height:1.55; }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+.modal { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow-md); width:100%; max-width:620px; max-height:90vh; overflow-y:auto; }
+.modal-header { padding:18px 22px 14px; border-bottom:1px solid var(--gray-200); display:flex; align-items:center; justify-content:space-between; }
+.modal-title { font-size:18px; font-weight:600; }
+.modal-body { padding:22px; }
+.modal-footer { padding:14px 22px; border-top:1px solid var(--gray-200); display:flex; justify-content:flex-end; gap:9px; }
+.modal-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--gray-600); line-height:1; padding:4px; }
+.export-option { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--gray-100); font-size:14px; cursor:pointer; }
+.export-option input[type=checkbox] { width:17px; height:17px; accent-color:var(--blue); }
+.empty { text-align:center; padding:60px 20px; color:var(--gray-600); }
+.empty-icon { font-size:48px; margin-bottom:12px; }
+.empty-text { font-size:16px; font-weight:500; color:var(--gray-800); margin-bottom:6px; }
+.empty-sub { font-size:13px; }
+.spinner { width:17px; height:17px; border:2px solid var(--gray-200); border-top-color:var(--blue); border-radius:50%; animation:spin 0.7s linear infinite; display:inline-block; vertical-align:middle; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.toast { position:fixed; bottom:22px; right:22px; background:var(--gray-900); color:#fff; padding:12px 18px; border-radius:var(--radius-sm); font-size:14px; font-weight:500; box-shadow:var(--shadow-md); z-index:2000; transform:translateY(70px); opacity:0; transition:all 0.3s; pointer-events:none; }
+.toast.show { transform:translateY(0); opacity:1; }
+.ing-detail { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow-md); padding:20px 22px; margin-bottom:16px; border-left:4px solid var(--blue); display:none; }
+.ing-detail.visible { display:block; }
+.ing-detail-name { font-size:18px; font-weight:700; margin-bottom:8px; }
+.ing-detail-body { font-size:14px; color:var(--gray-800); line-height:1.65; }
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-thumb { background:var(--gray-400); border-radius:3px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="app-title">💊 Medikamente</div>
+      <div class="app-subtitle">Persönliche Medikamentenverwaltung</div>
+    </div>
+    <nav class="nav-list">
+      <div class="nav-item active" id="nav-list" onclick="showView('list')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Medikamentenliste
+        <span class="nav-badge" id="med-count">0</span>
+      </div>
+      <div class="nav-item" id="nav-add" onclick="showView('add')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Medikament hinzufügen
+      </div>
+      <div class="nav-item" id="nav-interactions" onclick="showView('interactions')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Wechselwirkungen
+      </div>
+      <div class="nav-item" id="nav-ingredients" onclick="showView('ingredients')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Wirkstoffe &amp; Wirkung
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="export-btn" onclick="openExport()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Daten exportieren
+      </button>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="topbar">
+      <div class="topbar-title" id="topbar-title">Medikamentenliste</div>
+      <div id="topbar-actions"></div>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<!-- Ingredient Info Modal -->
+<div id="ingModal" style="display:none" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="ingModalName"></div>
+      <button class="modal-close" onclick="document.getElementById('ingModal').style.display='none'">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="ingModalBody"></div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" style="display:none" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Medikament bearbeiten</div>
+      <button class="modal-close" onclick="closeEdit()">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="editBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEdit()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div id="exportModal" style="display:none" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Daten exportieren</div>
+      <button class="modal-close" onclick="document.getElementById('exportModal').style.display='none'">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px;">Felder auswählen die exportiert werden sollen:</p>
+      <label class="export-option"><input type="checkbox" id="exp-name" checked> Medikamentenname</label>
+      <label class="export-option"><input type="checkbox" id="exp-dose" checked> Dosis</label>
+      <label class="export-option"><input type="checkbox" id="exp-timing" checked> Einnahmezeit</label>
+      <label class="export-option"><input type="checkbox" id="exp-doctor"> Arzt</label>
+      <label class="export-option"><input type="checkbox" id="exp-purpose" checked> Zweck / Indikation</label>
+      <label class="export-option"><input type="checkbox" id="exp-ingredients" checked> Inhaltsstoffe</label>
+      <label class="export-option"><input type="checkbox" id="exp-notes"> Notizen</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('exportModal').style.display='none'">Abbrechen</button>
+      <button class="btn btn-primary" onclick="doExportCSV()">Als CSV</button>
+      <button class="btn btn-primary" onclick="doExportPDF()">Als PDF drucken</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var STORAGE_KEY = 'med_db_v2';
+var db = { medicines: [] };
+var currentView = 'list';
+var editingId = null;
+var photoFront = null;
+var photoIng = null;
+
+function loadDB() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) db = JSON.parse(raw);
+  } catch(e) { db = { medicines: [] }; }
+}
+
+function saveDB() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  document.getElementById('med-count').textContent = db.medicines.length;
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2600);
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ---- NAVIGATION ----
+function showView(view) {
+  currentView = view;
+  var views = ['list','add','interactions','ingredients'];
+  for (var i = 0; i < views.length; i++) {
+    var el = document.getElementById('nav-' + views[i]);
+    if (el) el.classList.remove('active');
+  }
+  var active = document.getElementById('nav-' + view);
+  if (active) active.classList.add('active');
+
+  var titles = {
+    list: 'Medikamentenliste',
+    add: 'Neues Medikament hinzufügen',
+    interactions: 'Wechselwirkungen prüfen',
+    ingredients: 'Wirkstoffe & ihre Wirkung'
+  };
+  document.getElementById('topbar-title').textContent = titles[view] || '';
+  document.getElementById('topbar-actions').innerHTML = '';
+
+  if (view === 'list') renderList();
+  else if (view === 'add') renderAdd();
+  else if (view === 'interactions') renderInteractions();
+  else if (view === 'ingredients') renderIngredients();
+}
+
+// ---- LIST VIEW ----
+function renderList() {
+  var c = document.getElementById('content');
+  if (!db.medicines.length) {
+    c.innerHTML = '<div class="empty"><div class="empty-icon">💊</div><div class="empty-text">Noch keine Medikamente eingetragen</div><div class="empty-sub">Tippen Sie auf „Medikament hinzufügen" um zu beginnen</div></div>';
+    return;
+  }
+  var allIngs = [];
+  for (var i = 0; i < db.medicines.length; i++) {
+    var ings = db.medicines[i].ingredients || [];
+    for (var j = 0; j < ings.length; j++) {
+      if (allIngs.indexOf(ings[j]) === -1) allIngs.push(ings[j]);
+    }
+  }
+  var html = '<div class="stats-row">'
+    + '<div class="stat-card"><div class="stat-label">Medikamente</div><div class="stat-value">' + db.medicines.length + '</div><div class="stat-sub">in der Liste</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Wirkstoffe</div><div class="stat-value">' + allIngs.length + '</div><div class="stat-sub">gesamt</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Zuletzt</div><div class="stat-value" style="font-size:14px;margin-top:4px;">' + (db.medicines[db.medicines.length-1] ? db.medicines[db.medicines.length-1].name.slice(0,14) : '—') + '</div><div class="stat-sub">hinzugefügt</div></div>'
+    + '</div>';
+  for (var i = 0; i < db.medicines.length; i++) {
+    html += buildMedCard(db.medicines[i]);
+  }
+  c.innerHTML = html;
+}
+
+function buildMedCard(m) {
+  var ings = (m.ingredients || []);
+  var ingHtml = '';
+  for (var i = 0; i < ings.length; i++) {
+    ingHtml += '<button class="ing-tag" onclick="event.stopPropagation();lookupIng(\'' + ings[i].replace(/'/g,"\\'") + '\')">🔬 ' + esc(ings[i]) + '</button>';
+  }
+  return '<div class="med-item">'
+    + '<div class="med-item-header" onclick="toggleBody(\'' + m.id + '\')">'
+    + '<div style="flex:1">'
+    + '<div class="med-name">' + esc(m.name) + '</div>'
+    + '<div class="med-meta">'
+    + (m.dose ? '<span class="meta-pill">💊 ' + esc(m.dose) + '</span>' : '')
+    + (m.timing ? '<span class="meta-pill timing">⏰ ' + esc(m.timing) + '</span>' : '')
+    + (m.purpose ? '<span class="purpose-badge">🎯 ' + esc(m.purpose) + '</span>' : '')
+    + (m.doctor ? '<span class="meta-pill">👨‍⚕️ Dr. ' + esc(m.doctor) + '</span>' : '')
+    + '</div></div>'
+    + '<div class="med-actions">'
+    + '<button class="icon-btn" onclick="event.stopPropagation();openEdit(\'' + m.id + '\')" title="Bearbeiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
+    + '<button class="icon-btn danger" onclick="event.stopPropagation();deleteMed(\'' + m.id + '\')" title="Löschen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>'
+    + '</div></div>'
+    + '<div class="med-body" id="body-' + m.id + '">'
+    + (ings.length ? '<div class="ing-section"><div class="ing-label">Wirkstoffe — antippen für Erklärung</div><div class="ing-tags">' + ingHtml + '</div></div>' : '')
+    + (m.notes ? '<div style="margin-top:12px;font-size:13px;background:var(--gray-50);border-radius:7px;padding:10px;color:var(--gray-800);"><strong>Notizen:</strong> ' + esc(m.notes) + '</div>' : '')
+    + '</div></div>';
+}
+
+function toggleBody(id) {
+  var el = document.getElementById('body-' + id);
+  if (el) el.classList.toggle('open');
+}
+
+function deleteMed(id) {
+  if (!confirm('Dieses Medikament wirklich löschen?')) return;
+  db.medicines = db.medicines.filter(function(m) { return m.id !== id; });
+  saveDB();
+  renderList();
+  showToast('Medikament gelöscht');
+}
+
+// ---- ADD VIEW ----
+function renderAdd() {
+  photoFront = null;
+  photoIng = null;
+  var c = document.getElementById('content');
+  c.innerHTML = ''
+    + '<div class="card">'
+    + '<div class="card-header"><div class="card-title">📷 Foto scannen (optional)</div></div>'
+    + '<div class="card-body">'
+    + '<p style="font-size:13px;color:var(--gray-600);margin-bottom:14px;">Fotografieren Sie Vorder- und Rückseite der Verpackung. Die KI liest Name, Dosis und Inhaltsstoffe automatisch aus.</p>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">'
+    + '<div>'
+    + '<div style="font-size:12px;font-weight:500;color:var(--gray-600);margin-bottom:6px;">① Vorderseite (Name &amp; Dosis)</div>'
+    + '<label class="scan-zone" id="zone-front" for="file-front">'
+    + '<input type="file" id="file-front" accept="image/*" capture="environment" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="handlePhoto(\'front\',this)">'
+    + '<div id="zone-front-inner"><div class="scan-zone-icon">📸</div><div class="scan-zone-text">Foto aufnehmen</div><div class="scan-zone-sub">oder Bild auswählen</div></div>'
+    + '</label></div>'
+    + '<div>'
+    + '<div style="font-size:12px;font-weight:500;color:var(--gray-600);margin-bottom:6px;">② Inhaltsstoffe / Rückseite</div>'
+    + '<label class="scan-zone" id="zone-ing" for="file-ing">'
+    + '<input type="file" id="file-ing" accept="image/*" capture="environment" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="handlePhoto(\'ing\',this)">'
+    + '<div id="zone-ing-inner"><div class="scan-zone-icon">📸</div><div class="scan-zone-text">Foto aufnehmen</div><div class="scan-zone-sub">oder Bild auswählen</div></div>'
+    + '</label></div>'
+    + '</div>'
+    + '<button class="btn btn-primary" id="scan-btn" onclick="runScan()" disabled style="width:100%;justify-content:center;padding:12px;font-size:15px;">🔍 Fotos mit KI auslesen</button>'
+    + '<div id="scan-status" style="margin-top:10px;font-size:13px;min-height:18px;text-align:center;color:var(--gray-600);"></div>'
+    + '</div></div>'
+    + '<div class="card">'
+    + '<div class="card-header"><div class="card-title">✏️ Medikament eintragen</div></div>'
+    + '<div class="card-body">'
+    + '<div class="form-grid">'
+    + '<div class="field"><label>Name des Medikaments *</label><input id="f-name" type="text" placeholder="z.B. Aspirin Protect"></div>'
+    + '<div class="field"><label>Dosis</label><input id="f-dose" type="text" placeholder="z.B. 100 mg, 1 Tablette"></div>'
+    + '</div>'
+    + '<div class="form-grid-3">'
+    + '<div class="field"><label>Einnahmezeit</label><select id="f-timing"><option value="">— wählen —</option><option>Morgens</option><option>Mittags</option><option>Abends</option><option>Nachts</option><option>Zu den Mahlzeiten</option><option>Nüchtern</option><option>Bei Bedarf</option></select></div>'
+    + '<div class="field"><label>Verschreibender Arzt</label><input id="f-doctor" type="text" placeholder="Dr. Name"></div>'
+    + '<div class="field"><label>Zweck / Indikation</label><input id="f-purpose" type="text" placeholder="z.B. Blutverdünnung"></div>'
+    + '</div>'
+    + '<div class="field" style="margin-bottom:14px;"><label>Wirkstoffe &amp; Inhaltsstoffe (kommagetrennt)</label><textarea id="f-ingredients" placeholder="z.B. Acetylsalicylsäure, Cellulose, Stärke"></textarea></div>'
+    + '<div class="field" style="margin-bottom:18px;"><label>Notizen</label><textarea id="f-notes" placeholder="Besondere Hinweise, Nebenwirkungen ..."></textarea></div>'
+    + '<button class="btn btn-primary" onclick="saveNew()" style="width:100%;justify-content:center;padding:13px;font-size:16px;">✅ Medikament speichern</button>'
+    + '</div></div>';
+}
+
+function compressImage(dataUrl, callback) {
+  var img = new Image();
+  img.onload = function() {
+    var maxW = 1200, maxH = 1200;
+    var w = img.width, h = img.height;
+    if (w > maxW || h > maxH) {
+      var ratio = Math.min(maxW / w, maxH / h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    callback(canvas.toDataURL('image/jpeg', 0.8));
+  };
+  img.src = dataUrl;
+}
+
+function handlePhoto(type, input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    compressImage(e.target.result, function(compressed) {
+      var kb = Math.round(compressed.length * 0.75 / 1024);
+      if (type === 'front') {
+        photoFront = compressed;
+        var zone = document.getElementById('zone-front');
+        var inner = document.getElementById('zone-front-inner');
+        zone.classList.add('has-photo');
+        if (inner) inner.innerHTML = '<img src="' + compressed + '" style="width:100%;height:130px;object-fit:cover;"><div class="photo-ok">✓ Vorderseite (' + kb + ' KB)</div>';
+      } else {
+        photoIng = compressed;
+        var zone = document.getElementById('zone-ing');
+        var inner = document.getElementById('zone-ing-inner');
+        zone.classList.add('has-photo');
+        if (inner) inner.innerHTML = '<img src="' + compressed + '" style="width:100%;height:130px;object-fit:cover;"><div class="photo-ok">✓ Inhaltsstoffe (' + kb + ' KB)</div>';
+      }
+      var btn = document.getElementById('scan-btn');
+      if (btn) btn.disabled = !(photoFront || photoIng);
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function runScan() {
+  var btn = document.getElementById('scan-btn');
+  var status = document.getElementById('scan-status');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> KI liest Fotos aus...';
+  status.style.color = 'var(--gray-600)';
+  status.textContent = 'Wird vorbereitet...';
+
+  var content = [];
+  if (photoFront) {
+    var b64f = photoFront.split(',')[1];
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64f } });
+    content.push({ type: 'text', text: 'Dies ist die VORDERSEITE der Medikamentenverpackung.' });
+  }
+  if (photoIng) {
+    var b64i = photoIng.split(',')[1];
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64i } });
+    content.push({ type: 'text', text: 'Dies ist das INHALTSSTOFF-Etikett.' });
+  }
+  content.push({ type: 'text', text: 'Extrahiere: name (Medikamentenname), dose (Dosierung), ingredients (Array aller Inhaltsstoffe auf Deutsch). Antworte NUR mit JSON ohne Markdown: {"name":"","dose":"","ingredients":[]}' });
+
+  status.textContent = 'Sende an KI...';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 600,
+      messages: [{ role: 'user', content: content }]
+    })
+  })
+  .then(function(resp) {
+    if (!resp.ok) {
+      return resp.text().then(function(t) { throw new Error('HTTP ' + resp.status + ': ' + t.slice(0, 150)); });
+    }
+    return resp.json();
+  })
+  .then(function(data) {
+    var text = data.content.map(function(b) { return b.text || ''; }).join('').replace(/```json|```/g, '').trim();
+    var r = JSON.parse(text);
+    if (r.name) document.getElementById('f-name').value = r.name;
+    if (r.dose) document.getElementById('f-dose').value = r.dose;
+    if (r.ingredients && r.ingredients.length) document.getElementById('f-ingredients').value = r.ingredients.join(', ');
+    status.style.color = 'var(--green)';
+    status.textContent = '✅ Erfolgreich ausgelesen — bitte Felder prüfen und ggf. korrigieren';
+  })
+  .catch(function(err) {
+    status.style.color = 'var(--red)';
+    status.textContent = '⚠️ Fehler: ' + err.message;
+  })
+  .finally(function() {
+    btn.disabled = false;
+    btn.innerHTML = '🔍 Fotos mit KI auslesen';
+  });
+}
+
+function saveNew() {
+  var name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('Bitte Medikamentenname eingeben.'); document.getElementById('f-name').focus(); return; }
+  var ingRaw = document.getElementById('f-ingredients').value.trim();
+  var med = {
+    id: uid(),
+    name: name,
+    dose: document.getElementById('f-dose').value.trim(),
+    timing: document.getElementById('f-timing').value,
+    doctor: document.getElementById('f-doctor').value.trim(),
+    purpose: document.getElementById('f-purpose').value.trim(),
+    ingredients: ingRaw ? ingRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [],
+    notes: document.getElementById('f-notes').value.trim(),
+    addedAt: new Date().toISOString()
+  };
+  db.medicines.push(med);
+  saveDB();
+  showToast('✅ Medikament gespeichert');
+  showView('list');
+}
+
+// ---- EDIT ----
+function openEdit(id) {
+  var m = null;
+  for (var i = 0; i < db.medicines.length; i++) {
+    if (db.medicines[i].id === id) { m = db.medicines[i]; break; }
+  }
+  if (!m) return;
+  editingId = id;
+  var timingOptions = ['', 'Morgens', 'Mittags', 'Abends', 'Nachts', 'Zu den Mahlzeiten', 'Nüchtern', 'Bei Bedarf'];
+  var opts = timingOptions.map(function(o) { return '<option' + (m.timing === o ? ' selected' : '') + '>' + o + '</option>'; }).join('');
+  document.getElementById('editBody').innerHTML = ''
+    + '<div class="form-grid">'
+    + '<div class="field"><label>Name *</label><input id="e-name" value="' + esc(m.name) + '"></div>'
+    + '<div class="field"><label>Dosis</label><input id="e-dose" value="' + esc(m.dose || '') + '"></div>'
+    + '</div>'
+    + '<div class="form-grid-3">'
+    + '<div class="field"><label>Einnahmezeit</label><select id="e-timing">' + opts + '</select></div>'
+    + '<div class="field"><label>Arzt</label><input id="e-doctor" value="' + esc(m.doctor || '') + '"></div>'
+    + '<div class="field"><label>Zweck</label><input id="e-purpose" value="' + esc(m.purpose || '') + '"></div>'
+    + '</div>'
+    + '<div class="field" style="margin-bottom:14px;"><label>Wirkstoffe (kommagetrennt)</label><textarea id="e-ingredients">' + esc((m.ingredients || []).join(', ')) + '</textarea></div>'
+    + '<div class="field"><label>Notizen</label><textarea id="e-notes">' + esc(m.notes || '') + '</textarea></div>';
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function saveEdit() {
+  var m = null;
+  for (var i = 0; i < db.medicines.length; i++) {
+    if (db.medicines[i].id === editingId) { m = db.medicines[i]; break; }
+  }
+  if (!m) return;
+  var name = document.getElementById('e-name').value.trim();
+  if (!name) { alert('Name erforderlich'); return; }
+  m.name = name;
+  m.dose = document.getElementById('e-dose').value.trim();
+  m.timing = document.getElementById('e-timing').value;
+  m.doctor = document.getElementById('e-doctor').value.trim();
+  m.purpose = document.getElementById('e-purpose').value.trim();
+  var ingRaw = document.getElementById('e-ingredients').value.trim();
+  m.ingredients = ingRaw ? ingRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+  m.notes = document.getElementById('e-notes').value.trim();
+  saveDB();
+  closeEdit();
+  showToast('✅ Änderungen gespeichert');
+  if (currentView === 'list') renderList();
+}
+
+function closeEdit() {
+  document.getElementById('editModal').style.display = 'none';
+  editingId = null;
+}
+
+// ---- INTERACTIONS ----
+function renderInteractions() {
+  var c = document.getElementById('content');
+  if (db.medicines.length < 2) {
+    c.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Mindestens 2 Medikamente erforderlich</div><div class="empty-sub">Fügen Sie weitere Medikamente hinzu</div></div>';
+    return;
+  }
+  c.innerHTML = '<div class="card"><div class="card-body" style="text-align:center;">'
+    + '<p style="font-size:14px;color:var(--gray-600);margin-bottom:16px;">KI analysiert alle <strong>' + db.medicines.length + ' Medikamente</strong> auf Wechselwirkungen und Unverträglichkeiten.</p>'
+    + '<button class="btn btn-primary" onclick="checkInteractions()" id="check-btn" style="padding:12px 28px;font-size:15px;">🔍 Wechselwirkungen prüfen</button>'
+    + '</div></div><div id="int-results"></div>';
+}
+
+function checkInteractions() {
+  var btn = document.getElementById('check-btn');
+  btn.innerHTML = '<span class="spinner"></span> Analysiere...';
+  btn.disabled = true;
+  var list = db.medicines.map(function(m) {
+    return m.name + ' (' + (m.dose || '—') + '), Wirkstoffe: ' + ((m.ingredients || []).join(', ') || 'unbekannt');
+  }).join('\n');
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1200,
+      messages: [{ role: 'user', content: 'Ein 91-jähriger Patient nimmt:\n' + list + '\n\nAnalysiere Wechselwirkungen auf Deutsch. Nur JSON: {"level":"safe"|"warning"|"danger","summary":"Kurzzusammenfassung","items":[{"title":"Titel","detail":"Erklärung","severity":"low"|"medium"|"high"}]}' }]
+    })
+  })
+  .then(function(resp) { return resp.json(); })
+  .then(function(data) {
+    var text = data.content.map(function(b) { return b.text || ''; }).join('').replace(/```json|```/g, '').trim();
+    var r = JSON.parse(text);
+    var icons = { safe: '✅', warning: '⚠️', danger: '🚨' };
+    var labels = { safe: 'Keine bedeutsamen Wechselwirkungen', warning: 'Mögliche Wechselwirkungen — mit Arzt besprechen', danger: 'Wichtige Wechselwirkungen — Arzt konsultieren!' };
+    var sevColor = { low: 'var(--green)', medium: 'var(--amber)', high: 'var(--red)' };
+    var html = '<div class="interaction-card ' + r.level + '">'
+      + '<div class="int-title ' + r.level + '">' + icons[r.level] + ' ' + labels[r.level] + '</div>'
+      + (r.summary ? '<div style="font-size:13px;margin-bottom:6px;">' + esc(r.summary) + '</div>' : '');
+    var items = r.items || [];
+    for (var i = 0; i < items.length; i++) {
+      html += '<div class="int-item"><strong style="color:' + (sevColor[items[i].severity] || 'var(--gray-900)') + '">' + esc(items[i].title) + '</strong><br>' + esc(items[i].detail) + '</div>';
+    }
+    if (r.level !== 'safe') html += '<div class="int-item" style="font-weight:600;color:var(--red);">⚕️ Immer Arzt oder Apotheker konsultieren bevor Änderungen vorgenommen werden.</div>';
+    html += '</div>';
+    document.getElementById('int-results').innerHTML = html;
+  })
+  .catch(function(err) {
+    document.getElementById('int-results').innerHTML = '<div class="interaction-card warning"><div class="int-title warning">⚠️ Fehler: ' + esc(err.message) + '</div></div>';
+  })
+  .finally(function() {
+    btn.innerHTML = '🔍 Erneut prüfen';
+    btn.disabled = false;
+  });
+}
+
+// ---- INGREDIENTS VIEW ----
+function renderIngredients() {
+  var allIngs = [];
+  for (var i = 0; i < db.medicines.length; i++) {
+    var ings = db.medicines[i].ingredients || [];
+    for (var j = 0; j < ings.length; j++) {
+      if (allIngs.indexOf(ings[j]) === -1) allIngs.push(ings[j]);
+    }
+  }
+  allIngs.sort();
+  var c = document.getElementById('content');
+  if (!allIngs.length) {
+    c.innerHTML = '<div class="empty"><div class="empty-icon">🔬</div><div class="empty-text">Noch keine Wirkstoffe erfasst</div><div class="empty-sub">Fügen Sie Medikamente mit Inhaltsstoffen hinzu</div></div>';
+    return;
+  }
+  var tags = allIngs.map(function(ing) {
+    return '<button class="ing-tag" style="font-size:14px;padding:7px 15px;" onclick="lookupIng(\'' + ing.replace(/'/g, "\\'") + '\')">🔬 ' + esc(ing) + '</button>';
+  }).join('');
+  c.innerHTML = '<div class="ing-detail" id="ing-detail"><div class="ing-detail-name" id="ing-detail-name"></div><div class="ing-detail-body" id="ing-detail-body"></div></div>'
+    + '<div class="card"><div class="card-header"><div class="card-title">Alle Wirkstoffe (' + allIngs.length + ') — antippen für Erklärung</div></div>'
+    + '<div class="card-body"><div style="display:flex;flex-wrap:wrap;gap:8px;">' + tags + '</div></div></div>';
+}
+
+function lookupIng(name) {
+  if (currentView === 'list') {
+    document.getElementById('ingModalName').textContent = '🔬 ' + name;
+    document.getElementById('ingModalBody').innerHTML = '<div style="text-align:center;padding:24px;"><span class="spinner"></span></div>';
+    document.getElementById('ingModal').style.display = 'flex';
+    fetchIngInfo(name, function(text) {
+      document.getElementById('ingModalBody').innerHTML = '<p style="font-size:14px;line-height:1.7;color:var(--gray-800);">' + text + '</p>';
+    }, function(err) {
+      document.getElementById('ingModalBody').innerHTML = '<p style="color:var(--red);">Fehler: ' + esc(err) + '</p>';
+    });
+    return;
+  }
+  if (currentView === 'ingredients') {
+    var panel = document.getElementById('ing-detail');
+    var nameEl = document.getElementById('ing-detail-name');
+    var bodyEl = document.getElementById('ing-detail-body');
+    if (!panel) { renderIngredients(); setTimeout(function() { lookupIng(name); }, 100); return; }
+    panel.classList.add('visible');
+    nameEl.textContent = name;
+    bodyEl.innerHTML = '<span class="spinner"></span> Lade...';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    fetchIngInfo(name, function(text) {
+      bodyEl.innerHTML = '<p style="font-size:14px;line-height:1.7;">' + text + '</p>';
+    }, function(err) {
+      bodyEl.innerHTML = '<p style="color:var(--red);">Fehler beim Laden.</p>';
+    });
+  }
+}
+
+function fetchIngInfo(name, onSuccess, onError) {
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 400,
+      messages: [{ role: 'user', content: 'Erkläre den Wirkstoff "' + name + '" auf Deutsch in 3-4 Sätzen für einen Patienten: Was macht er im Körper? Wofür wird er eingesetzt? Gibt es wichtige Hinweise? Einfaches, verständliches Deutsch ohne Fachjargon.' }]
+    })
+  })
+  .then(function(resp) { return resp.json(); })
+  .then(function(data) { onSuccess(data.content.map(function(b) { return b.text || ''; }).join('')); })
+  .catch(function(err) { onError(err.message); });
+}
+
+// ---- EXPORT ----
+function openExport() {
+  document.getElementById('exportModal').style.display = 'flex';
+}
+
+function doExportCSV() {
+  var f = {
+    name: document.getElementById('exp-name').checked,
+    dose: document.getElementById('exp-dose').checked,
+    timing: document.getElementById('exp-timing').checked,
+    doctor: document.getElementById('exp-doctor').checked,
+    purpose: document.getElementById('exp-purpose').checked,
+    ingredients: document.getElementById('exp-ingredients').checked,
+    notes: document.getElementById('exp-notes').checked
+  };
+  var headers = [];
+  if (f.name) headers.push('Name');
+  if (f.dose) headers.push('Dosis');
+  if (f.timing) headers.push('Einnahme');
+  if (f.doctor) headers.push('Arzt');
+  if (f.purpose) headers.push('Zweck');
+  if (f.ingredients) headers.push('Inhaltsstoffe');
+  if (f.notes) headers.push('Notizen');
+  var rows = db.medicines.map(function(m) {
+    var r = [];
+    if (f.name) r.push('"' + (m.name || '').replace(/"/g, '""') + '"');
+    if (f.dose) r.push('"' + (m.dose || '').replace(/"/g, '""') + '"');
+    if (f.timing) r.push('"' + (m.timing || '').replace(/"/g, '""') + '"');
+    if (f.doctor) r.push('"' + (m.doctor || '').replace(/"/g, '""') + '"');
+    if (f.purpose) r.push('"' + (m.purpose || '').replace(/"/g, '""') + '"');
+    if (f.ingredients) r.push('"' + (m.ingredients || []).join('; ').replace(/"/g, '""') + '"');
+    if (f.notes) r.push('"' + (m.notes || '').replace(/"/g, '""') + '"');
+    return r.join(',');
+  });
+  var csv = '\uFEFF' + [headers.join(',')].concat(rows).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Medikamente_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  document.getElementById('exportModal').style.display = 'none';
+  showToast('✅ CSV exportiert');
+}
+
+function doExportPDF() {
+  var f = {
+    name: document.getElementById('exp-name').checked,
+    dose: document.getElementById('exp-dose').checked,
+    timing: document.getElementById('exp-timing').checked,
+    doctor: document.getElementById('exp-doctor').checked,
+    purpose: document.getElementById('exp-purpose').checked,
+    ingredients: document.getElementById('exp-ingredients').checked,
+    notes: document.getElementById('exp-notes').checked
+  };
+  var rows = db.medicines.map(function(m) {
+    var html = '<div style="border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:12px;page-break-inside:avoid;">';
+    if (f.name) html += '<h3 style="margin:0 0 7px;font-size:16px;">' + (m.name || '') + '</h3>';
+    var meta = [];
+    if (f.dose && m.dose) meta.push('<strong>Dosis:</strong> ' + m.dose);
+    if (f.timing && m.timing) meta.push('<strong>Einnahme:</strong> ' + m.timing);
+    if (f.doctor && m.doctor) meta.push('<strong>Arzt:</strong> Dr. ' + m.doctor);
+    if (f.purpose && m.purpose) meta.push('<strong>Zweck:</strong> ' + m.purpose);
+    if (meta.length) html += '<p style="font-size:13px;color:#444;margin:0 0 7px;">' + meta.join(' &nbsp;|&nbsp; ') + '</p>';
+    if (f.ingredients && m.ingredients && m.ingredients.length) html += '<p style="font-size:13px;margin:0 0 5px;"><strong>Inhaltsstoffe:</strong> ' + m.ingredients.join(', ') + '</p>';
+    if (f.notes && m.notes) html += '<p style="font-size:13px;color:#555;margin:0;"><strong>Notizen:</strong> ' + m.notes + '</p>';
+    html += '</div>';
+    return html;
+  }).join('');
+  var win = window.open('', '_blank');
+  win.document.write('<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Medikamentenliste</title>'
+    + '<style>body{font-family:-apple-system,sans-serif;max-width:680px;margin:30px auto;color:#222;} h1{font-size:21px;} p.sub{color:#666;font-size:13px;margin-bottom:22px;} @media print{body{margin:10px;}}</style>'
+    + '</head><body><h1>💊 Medikamentenliste</h1>'
+    + '<p class="sub">Erstellt am ' + new Date().toLocaleDateString('de-DE') + ' &nbsp;|&nbsp; ' + db.medicines.length + ' Medikamente</p>'
+    + rows + '</body></html>');
+  win.document.close();
+  setTimeout(function() { win.print(); }, 400);
+  document.getElementById('exportModal').style.display = 'none';
+}
+
+// ---- INIT ----
+loadDB();
+showView('list');
+</script>
+</body>
+</html>
